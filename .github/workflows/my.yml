@@ -1,0 +1,49 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [published]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Node.js/Python/Java (choose one)
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: npm ci  # or pip install -r requirements.txt
+    
+    - name: Run tests
+      run: npm test
+    
+    - name: Build
+      run: npm run build  # or your build command
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-output
+        path: dist/
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/download-artifact@v3
+      with:
+        name: build-output
+    
+    - name: Deploy to production
+      run: |
+        echo "Deploying..."
+        # Add deployment commands here
